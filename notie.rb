@@ -3,7 +3,7 @@
 def form_roots(num=3)
   num.times do |num|
   	proto = form_root
-    puts "%d: %s" % [num.next, proto, transform(proto)]
+    puts "%d: %s > %s" % [num.next, proto, transform(proto)]
   end
 end
 
@@ -24,8 +24,11 @@ def form_root
   root
 end
 
-CONS = "(p|t|k|?|m|n|N|j|w|r|h|b|d|g|t_|T|D|n_|d_)"
-VOW = "(a|i|u|y)"
+CONS = '(p|t|k|\?|m|n|N|j|w|r|h|b|d|g|t_|T|D|n_|d_|l)'
+VOICED = '(m|n|N|j|w|r|b|d|g|D|n_|d_|l)'
+VOICELESS = '(p|t|k|\?|h|t_|T)'
+NON_NASAL = '(p|t|k|\?|j|w|r|h|b|d|g|t_|T|D|d_|l)'
+VOW = '(a|i|u|y)'
 
 def consonant
 	consonants = {
@@ -46,6 +49,58 @@ end
 
 def vowel
 	%w{a i u y}.random
+end
+
+def transform protoform
+	newform = protoform.dup
+	newform.gsub! /(.)(h|\?)#{CONS}/, '\1:\2'
+	newform.gsub! /y/, 'i'
+	newform.gsub! /#{NON_NASAL}$/, ':'
+	newform.gsub! /h/, ''
+
+	# First voice loss intervocalic and initial
+	newform.gsub! /#{VOW}g#{VOW}/, '\1h\2'
+	newform.gsub! /#{VOW}d_#{VOW}/, '\1j\2'
+	newform.gsub! /#{VOW}d#{VOW}/, '\1j\2'
+	newform.gsub! /#{VOW}D#{VOW}/, '\1l\2'
+	newform.gsub! /#{VOW}b#{VOW}/, '\1w\2'
+
+	newform.gsub! /^g#{VOW}/, 'h\1'
+	newform.gsub! /^d_#{VOW}/, 'j\1'
+	newform.gsub! /^d#{VOW}/, 'j\1'
+	newform.gsub! /^D#{VOW}/, 'l\1'
+	newform.gsub! /^b#{VOW}/, 'w\1'
+	
+	# assimilation
+	newform.gsub! /p#{VOICED}/, 'b\1'
+	newform.gsub! /t_#{VOICED}/, 'd_\1'
+	newform.gsub! /t#{VOICED}/, 'd\1'
+	newform.gsub! /T#{VOICED}/, 'D\1'
+	newform.gsub! /k#{VOICED}/, 'g\1'
+	newform.gsub! /b#{VOICELESS}/, 'p\1'
+	newform.gsub! /d_#{VOICELESS}/, 't_\1'
+	newform.gsub! /d#{VOICELESS}/, 't\1'
+	newform.gsub! /D#{VOICELESS}/, 'T\1'
+	newform.gsub! /g#{VOICELESS}/, 'k\1'
+	
+	newform.gsub! /(b|d_|d|D|g)j/, 'jj'
+	newform.gsub! /(b|d_|d|D|g)w/, 'ww'
+	newform.gsub! /(b|d_|d|D|g)(m|n|N|r)/, '\2'
+	
+	newform.gsub! /aw/, 'o:'
+	newform.gsub! /aj/, 'e:'
+
+	# Hiatus
+	newform.gsub! /i:?j/, 'i:'
+	newform.gsub! /u:?w/, 'u:'
+	newform.gsub! /i:?i/, 'i:'
+	newform.gsub! /u:?u/, 'u:'
+	newform.gsub! /u(:?)a(:?)/, 'o\1\2'
+
+	# nonsense reduction
+	newform.sub! /:+/, ':'
+
+	newform
 end
 
 class Array
